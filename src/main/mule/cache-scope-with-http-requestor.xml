@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="99d82868-279f-4880-9689-8811bbefe4d2" basePath="/" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d40a11a3-22c9-48e9-abf6-57dfab168770" >
+		<http:request-connection host="localhost" port="8081" />
+	</http:request-config>
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="1e930cae-c4ab-4060-b843-623917460d1a" >
+		<os:private-object-store alias="cache_store" maxEntries="3" entryTtl="1" expirationInterval="200" expirationIntervalUnit="SECONDS"/>
+	</ee:object-store-caching-strategy>
+	<flow name="cache-scope-with-http-requestor-flow" doc:id="4c13d9d6-2e3d-4848-8d85-e75252f7864a" >
+		<http:listener doc:name="/cached/data" doc:id="62e0c046-50c8-4257-9bc8-9ed5892fd1d4" config-ref="HTTP_Listener_config" path="/cached/data"/>
+		<ee:cache doc:name="Cache" doc:id="a78eb2c9-b798-4436-a40d-cf07fc9999df" filterExpression="#[payload.request != null]" cachingStrategy-ref="Caching_Strategy">
+			<logger level="INFO" doc:name="Input Data" doc:id="02bcb7c5-dd60-40a4-93fe-a7a090a0788d" message="#[payload]"/>
+			<http:request method="GET" doc:name="Request" doc:id="06d8ef3c-1026-4110-8aa7-24b07bf0b212" config-ref="HTTP_Request_configuration" path="/data">
+				<http:query-params ><![CDATA[#[output application/java
+---
+{
+	id : payload.request
+}]]]></http:query-params>
+			</http:request>
+		</ee:cache>
+		<logger level="INFO" doc:name="Output Data" doc:id="f8008ca1-c5b8-4192-92c4-ca8a7b7652da" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="e90d095d-ac49-4e18-bf18-5c084c2b5bad" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="data-source-flow" doc:id="b7d3d7f2-d59b-456e-9db5-a3274a6d302e" >
+		<http:listener doc:name="/data" doc:id="68edc7fc-cae9-4e8f-8449-59cbde696264" config-ref="HTTP_Listener_config" path="/data"/>
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;	request: attributes.queryParams.id default "" as String,&#10;	text: "message",&#10;	timestamp: now()&#10;}]' doc:name="Set Payload" doc:id="792acb24-965c-4fdd-9f72-d7929d3075c5" />
+	</flow>
+</mule>

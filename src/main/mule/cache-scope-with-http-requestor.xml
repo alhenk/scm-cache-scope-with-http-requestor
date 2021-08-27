@@ -40,6 +40,6 @@ payload
 	</flow>
 	<flow name="data-source-flow" doc:id="b7d3d7f2-d59b-456e-9db5-a3274a6d302e" >
 		<http:listener doc:name="/data" doc:id="68edc7fc-cae9-4e8f-8449-59cbde696264" config-ref="HTTP_Listener_config" path="/data"/>
-		<set-payload value='#[output application/json&#10;---&#10;{&#10;	request: attributes.queryParams.id default "" as String,&#10;	text: "requested message",&#10;	timestamp: now()&#10;}]' doc:name="Set Payload" doc:id="792acb24-965c-4fdd-9f72-d7929d3075c5" />
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;	request: attributes.queryParams.id default "" as String,&#10;	text: "message",&#10;	timestamp: now()&#10;}]' doc:name="Set Payload" doc:id="792acb24-965c-4fdd-9f72-d7929d3075c5" />
 	</flow>
 </mule>
